@@ -1,4 +1,4 @@
-# 0xweb — Web Application Penetration Testing Lab
+# 0xWeb — Web Application Penetration Testing Lab
 
 > A deliberately vulnerable, local-only training lab for hands-on web application
 > security practice. Every challenge maps to a **real endpoint** with **three
