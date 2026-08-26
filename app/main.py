@@ -275,8 +275,15 @@ def read_solved(request: Request) -> set:
 # ---------------------------------------------------------------------------
 
 def db():
-    conn = sqlite3.connect(DB)
+    # timeout + pragmas make SQLite tolerate slow/locking filesystems (e.g. a
+    # Windows bind mount) instead of failing a read with "disk I/O error".
+    conn = sqlite3.connect(DB, timeout=10)
     conn.row_factory = sqlite3.Row
+    try:
+        conn.execute("PRAGMA busy_timeout=10000")
+        conn.execute("PRAGMA synchronous=NORMAL")
+    except sqlite3.Error:
+        pass
     return conn
 
 

@@ -64,8 +64,8 @@ Submit flags and track progress at **/submit**.
 Stop / reset:
 
 ```bash
-docker compose down                 # stop
-rm -f data/0xweb.db && docker compose up --build   # reset progress & data
+docker compose down                 # stop (keeps the DB volume)
+docker compose down -v && docker compose up --build   # reset DB (named volume)
 ```
 
 ### Run without Docker

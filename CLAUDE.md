@@ -19,7 +19,7 @@ docker compose logs -f        # live logs
 
 Run without Docker (native): `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt && .venv/bin/uvicorn app.main:app --reload --port 8000`. Note: native runs on a Windows drive (`/mnt/c`) cannot traverse to real OS files like `/etc/passwd` (WSL drvfs does not resolve `..` past the mount); traversal to OS files only works inside Docker. `iputils-ping` is installed in the image, so `/tools/ping` runs a real `ping` — native runs may lack it.
 
-Reset DB (also needed after any schema change in `init_db`): `docker compose down && rm -f data/0xweb.db && docker compose up --build`.
+Reset DB (also needed after any schema change in `init_db`): `docker compose down -v && docker compose up --build` (DB lives in the `0xweb-data` named volume, not on the host).
 
 There is no test suite, linter, or CI.
 

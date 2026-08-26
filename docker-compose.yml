@@ -5,6 +5,11 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
-      - ./data:/app/data
+      # DB lives in a Docker-managed volume (ext4), NOT on the Windows /mnt/c
+      # bind mount — SQLite over drvfs throws intermittent "disk I/O error".
+      - 0xweb-data:/app/data
       - ./app/static/uploads:/app/app/static/uploads
     restart: unless-stopped
+
+volumes:
+  0xweb-data:

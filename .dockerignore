@@ -1,0 +1,10 @@
+# keep runtime data & secrets out of the image (the volume/init_db create them)
+data/*.db
+data/*.db-journal
+data/flag_secret.txt
+# dev-only artifacts
+.venv/
+__pycache__/
+*.pyc
+.git/
+docs/
