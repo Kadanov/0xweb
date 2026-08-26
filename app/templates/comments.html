@@ -7,16 +7,10 @@
   <textarea name="body" placeholder="Comment" required></textarea>
   <button>Post</button>
 </form>
-{% for row in rows %}
+{% for c in items %}
 <article class="comment">
-  <b>{{row["author"]}}</b>
-  {% if level == 1 %}
-    <div>{{row["body"]|safe}}</div>
-  {% elif level == 2 %}
-    <div>{{ row["body"]|replace("<script>","")|replace("<SCRIPT>","")|safe }}</div>
-  {% else %}
-    <div title="{{row['body']|safe}}">hover to view comment</div>
-  {% endif %}
+  <b>{{c.author}}</b>
+  <div>{{ c.display|safe }}</div>
 </article>
 {% endfor %}
 {% endblock %}

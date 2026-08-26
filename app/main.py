@@ -709,14 +709,34 @@ async def search(request: Request, q: str = "", level: str = "1"):
 # 7. XSS — Stored
 # ---------------------------------------------------------------------------
 
+def render_comment(body: str, lvl: int) -> str:
+    # All levels use element context (each comment is self-contained, so one
+    # payload can never hide the others). The filter is what escalates:
+    if lvl == 1:
+        return body  # no filtering — <script> works
+    if lvl == 2:
+        return re.sub(r"<script>", "", body, flags=re.IGNORECASE)  # bypass: event handler
+    # L3: strips <script> blocks AND *quoted* event-handler attributes cleanly
+    # (removes the whole on...="..."/'...'), so well-formed comments stay intact.
+    # Bypass: an UNQUOTED handler, e.g. <svg onload=alert(document.cookie)> or
+    # <img src=x onmouseover=alert(document.cookie)>.
+    out = re.sub(r"(?is)<\s*/?\s*script[^>]*>", "", body)
+    out = re.sub(r"""(?is)\son\w+\s*=\s*(".*?"|'.*?')""", "", out)
+    return out
+
+
 @app.get("/comments", response_class=HTMLResponse)
 async def comments(request: Request, level: str = "1"):
     lvl = clamp_level(level)
     conn = db()
     rows = conn.execute("SELECT id,author,body FROM comments ORDER BY id").fetchall()
     conn.close()
+    items = [
+        {"author": r["author"], "display": render_comment(r["body"], lvl)}
+        for r in rows
+    ]
     resp = templates.TemplateResponse(
-        "comments.html", {"request": request, "rows": rows, "level": lvl}
+        "comments.html", {"request": request, "items": items, "level": lvl}
     )
     resp.set_cookie("flag_stored", flag_str("xss-stored", lvl), httponly=False)
     return resp
