@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Catalog</h1>
+<form method="get" action="/catalog">
+  <input name="q" placeholder="Search catalog">
+  <button>Search</button>
+</form>
+<div class="list">
+{% for row in rows %}
+  <article class="item">
+    <h2>{{row["name"]}}</h2>
+    <p>{{row["description"]}}</p>
+    <a href="/product?id={{row['id']}}">View product</a>
+  </article>
+{% endfor %}
+</div>
+{% endblock %}

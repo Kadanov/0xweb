@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Client-side viewer — Level {{level}}</h1>
+<p>Reads <code>?value=</code> from the URL and renders it in the browser.</p>
+<p id="output"></p>
+<a id="link" href="#">continue</a>
+<script>
+  const params = new URLSearchParams(location.search);
+  const value = params.get("value") || "0xweb";
+  const level = params.get("level") || "1";
+  const out = document.getElementById("output");
+  const link = document.getElementById("link");
+  if (level === "1") {
+    // innerHTML sink.
+    out.innerHTML = "Value: " + value;
+  } else if (level === "2") {
+    // Naive <script> filter before the same sink.
+    out.innerHTML = "Value: " + value.replace(/<script>/gi, "");
+  } else {
+    // href sink — javascript: URIs execute on click.
+    link.setAttribute("href", value);
+    out.textContent = "Value set on the link below.";
+  }
+</script>
+<p><a href="/category/xss-dom">Back</a></p>
+{% endblock %}

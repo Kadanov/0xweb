@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>File / Directory Enumeration</h1>
+<p>Nothing here is linked from the UI. Enumerate the surface yourself.</p>
+<ul>
+  <li><code>/robots.txt</code> — start here (Level 1)</li>
+  <li>Level 2: guess common backup / dotfile names under <code>/static/files/</code>
+      (e.g. <code>.env</code>, <code>*.bak</code>).</li>
+  <li>Level 3: differentiate by status code — a <code>403</code> means the path
+      exists but is forbidden, unlike a <code>404</code>.</li>
+</ul>
+<p>Tools: <code>gobuster</code>, <code>ffuf</code>, <code>dirsearch</code>.</p>
+<p><a href="/">&larr; Back</a></p>
+{% endblock %}

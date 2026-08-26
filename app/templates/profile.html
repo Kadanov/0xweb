@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Profile</h1>
+<div class="item">
+  <p><b>id:</b> {{row["id"]}}</p>
+  <p><b>username:</b> {{row["username"]}}</p>
+  <p><b>role:</b> {{row["role"]}}</p>
+  <p><b>bio:</b> {{row["bio"]}}</p>
+  <p><b>secret:</b> <code>{{row["secret"]}}</code></p>
+</div>
+<p><a href="/category/idor">Back</a></p>
+{% endblock %}

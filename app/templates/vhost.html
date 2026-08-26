@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Virtual Host Enumeration</h1>
+<p>The server routes on the <code>Host</code> header. The default host serves this
+   lab; internal virtual hosts serve something else.</p>
+<pre>curl -s http://127.0.0.1:8000/ -H "Host: dev.0xweb.local"
+curl -s http://127.0.0.1:8000/ -H "Host: admin.0xweb.local"</pre>
+<p>Level 3's hostname is not guessable — it leaks in a config file you must find
+   via another category first.</p>
+<p>Tools: <code>ffuf -H "Host: FUZZ.0xweb.local"</code>, <code>gobuster vhost</code>.</p>
+<p><a href="/">&larr; Back</a></p>
+{% endblock %}

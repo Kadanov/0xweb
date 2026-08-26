@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Scoreboard</h1>
+
+{% if status == "ok" %}<p class="flag">✅ Correct — flag accepted.</p>
+{% elif status == "dup" %}<p class="msg">Already submitted.</p>
+{% elif status == "bad" %}<p class="msg err">❌ Not a valid flag.</p>
+{% elif status == "reset" %}<p class="msg">Progress reset.</p>{% endif %}
+
+<div class="progress-wrap">
+  <div class="progress-bar" style="width: {{ (solved_count / total * 100) | round(0, 'floor') }}%"></div>
+</div>
+<p class="count">{{solved_count}} / {{total}} flags</p>
+
+<form method="post" action="/submit" class="form submit-form">
+  <input name="flag" placeholder="FLAG{...}" autocomplete="off" required autofocus>
+  <button>Submit</button>
+</form>
+
+<div class="board">
+{% for c in board %}
+  <div class="board-cat {% if c.done == c.total %}cat-done{% endif %}">
+    <div class="board-head">
+      <span class="board-num">{% if c.num < 10 %}0{% endif %}{{c.num}}</span>
+      <a href="/category/{{c.slug}}">{{c.name}}</a>
+      <span class="board-score">{{c.done}}/{{c.total}}</span>
+    </div>
+    <ul class="board-flags">
+    {% for f in c.flags %}
+      <li class="{% if f.solved %}fl-done{% else %}fl-todo{% endif %}">
+        <span class="tick">{% if f.solved %}✅{% else %}▢{% endif %}</span>
+        <b class="lvl">L{{f.level}}</b>
+        {% if f.solved %}<code>{{f.flag}}</code>{% else %}<span class="hidden-flag">locked</span>{% endif %}
+      </li>
+    {% endfor %}
+    </ul>
+  </div>
+{% endfor %}
+</div>
+
+<p class="reset"><a href="/reset-progress">reset progress</a></p>
+{% endblock %}

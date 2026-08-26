@@ -1,0 +1,1 @@
+Training note: enumeration is often the first step.

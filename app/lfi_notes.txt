@@ -1,0 +1,2 @@
+0xweb internal note
+FLAG{0xweb_lfi_local_file}

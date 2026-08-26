@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <img src="/static/logo.png" alt="0xweb" class="logo">
+  <h1>Web Application Penetration Testing Lab</h1>
+  <p>Each category maps to a real endpoint with three difficulty levels
+     (<code>?level=1|2|3</code>). Higher levels add filters you must bypass.</p>
+  <p class="byline">Created by <b>kadi kadanov</b></p>
+</section>
+
+<div class="grid">
+  {% for c in categories %}
+  <a class="card" href="/category/{{c.slug}}">
+    <div class="num">{% if c.num < 10 %}0{% endif %}{{c.num}}</div>
+    <h2>{{c.name}}</h2>
+    <p>{{c.objective}}</p>
+    <div class="levels">L1 · L2 · L3</div>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

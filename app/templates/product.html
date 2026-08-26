@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Product lookup — Level {{level}}</h1>
+<p>Requested value: <code>{{id}}</code></p>
+{% for row in rows %}
+<div class="item">
+  <h2>{{row["name"]}}</h2>
+  <p>{{row["description"]}}</p>
+  <strong>${{row["price"]}}</strong>
+</div>
+{% else %}
+<p>No product matched.</p>
+{% endfor %}
+<p><a href="/category/sqli-union">Back</a></p>
+{% endblock %}

@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.env
+.venv/
+data/*.db
+data/flag_secret.txt
+!data/.gitkeep
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+TOOLS.md

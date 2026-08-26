@@ -1,0 +1,10 @@
+services:
+  0xweb:
+    build: .
+    container_name: 0xweb
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./app/static/uploads:/app/app/static/uploads
+    restart: unless-stopped
