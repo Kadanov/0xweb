@@ -10,6 +10,7 @@
     <div class="level-badge">Level {{lv.n}}</div>
     <div class="level-body">
       <p class="level-note">{{lv.note}}</p>
+      {% if lv.target %}<p class="level-target">🎯 Target: <code>{{lv.target}}</code></p>{% endif %}
       <a class="btn" href="{{lv.entry}}">Open entry point</a>
       <code class="entry">{{lv.entry}}</code>
     </div>

@@ -67,22 +67,22 @@ CATEGORIES = [
         "slug": "traversal",
         "num": 1,
         "name": "Directory Traversal",
-        "objective": "Read files outside the intended directory (e.g. app/secret.txt, /etc/passwd).",
+        "objective": "Read files outside the served directory (app/static/files/). The flag file for each level is named below — the challenge is the bypass, not guessing the name.",
         "levels": [
-            {"n": 1, "note": "No filtering.", "entry": "/download?file=public.txt&level=1"},
-            {"n": 2, "note": "Naive '../' rejection.", "entry": "/download?file=public.txt&level=2"},
-            {"n": 3, "note": "Non-recursive strip + absolute-path block.", "entry": "/download?file=public.txt&level=3"},
+            {"n": 1, "note": "No filtering — plain '../' works.", "target": "secret.txt (one dir above the web root; /etc/passwd also readable)", "entry": "/download?file=public.txt&level=1"},
+            {"n": 2, "note": "Naive '../' rejection — the classic sequence is blocked, but the check only looks for '../'.", "target": "flag_trav_l2.txt at an absolute path under /tmp/", "entry": "/download?file=public.txt&level=2"},
+            {"n": 3, "note": "Non-recursive '../' strip + absolute paths blocked — strip runs once, so a nested sequence survives.", "target": "secret3.txt (in app/static/, one dir above the web root)", "entry": "/download?file=public.txt&level=3"},
         ],
     },
     {
         "slug": "lfi",
         "num": 2,
         "name": "Local File Inclusion",
-        "objective": "Make the content viewer include an arbitrary local file.",
+        "objective": "Make the content viewer include an arbitrary local file. The flag file for each level is named below — the challenge is the bypass, not guessing the name.",
         "levels": [
-            {"n": 1, "note": "Unknown page falls through to disk.", "entry": "/include?page=home&level=1"},
-            {"n": 2, "note": "'..' rejected (try absolute paths).", "entry": "/include?page=home&level=2"},
-            {"n": 3, "note": "Non-recursive '../' strip.", "entry": "/include?page=home&level=3"},
+            {"n": 1, "note": "Any unknown page name falls straight through to disk (base dir is app/).", "target": "lfi_notes.txt (sits in app/, next to the base dir)", "entry": "/include?page=home&level=1"},
+            {"n": 2, "note": "'..' is rejected — but absolute paths are not touched.", "target": "flag_lfi_l2.txt at an absolute path under /tmp/", "entry": "/include?page=home&level=2"},
+            {"n": 3, "note": "Non-recursive '../' strip — runs once, so a nested sequence survives.", "target": "flag_lfi_l3.txt (one dir above app/, in the repo root)", "entry": "/include?page=home&level=3"},
         ],
     },
     {
@@ -111,11 +111,11 @@ CATEGORIES = [
         "slug": "cmdi",
         "num": 5,
         "name": "Command Injection",
-        "objective": "Run OS commands to read the per-level flag files (/tmp/flag_cmdi_l*.txt).",
+        "objective": "Inject OS commands into the ping tool to read each level's flag file. The target file is named below — the challenge is the injection bypass, not guessing the path.",
         "levels": [
-            {"n": 1, "note": "Raw shell string.", "entry": "/tools/ping?host=127.0.0.1&level=1"},
-            {"n": 2, "note": "; and && and | stripped.", "entry": "/tools/ping?host=127.0.0.1&level=2"},
-            {"n": 3, "note": "Also $ and ( ) stripped.", "entry": "/tools/ping?host=127.0.0.1&level=3"},
+            {"n": 1, "note": "Raw shell string — any separator works (; | && newline).", "target": "/tmp/flag_cmdi_l1.txt", "entry": "/tools/ping?host=127.0.0.1&level=1"},
+            {"n": 2, "note": "; && & | are stripped — chain another way (command substitution $(...) / backticks / newline).", "target": "/tmp/flag_cmdi_l2.txt", "entry": "/tools/ping?host=127.0.0.1&level=2"},
+            {"n": 3, "note": "Also $ ( ) stripped — no substitution left, but a newline still starts a new command.", "target": "/tmp/flag_cmdi_l3.txt", "entry": "/tools/ping?host=127.0.0.1&level=3"},
         ],
     },
     {
@@ -166,22 +166,22 @@ CATEGORIES = [
         "slug": "upload",
         "num": 10,
         "name": "File Upload",
-        "objective": "Upload a file that renders active content (SVG/HTML) from /static/uploads/.",
+        "objective": "The server claims to accept images only. Bypass the filter to store a file that EXECUTES in the browser (stored XSS → steal document.cookie). Uploaded files are served as-is from /static/uploads/. The error message on each level tells you what the filter checks — work out how to defeat it.",
         "levels": [
-            {"n": 1, "note": "No restrictions.", "entry": "/uploads?level=1"},
-            {"n": 2, "note": "Case-sensitive extension blacklist.", "entry": "/uploads?level=2"},
-            {"n": 3, "note": "Extension + content sniff.", "entry": "/uploads?level=3"},
+            {"n": 1, "note": "The filter decides 'is this an image?' from the Content-Type the client sends. Who controls that value?", "entry": "/uploads?level=1"},
+            {"n": 2, "note": "The filter looks for an image extension in the filename — but does it check the END of the name, or just whether it appears anywhere?", "entry": "/uploads?level=2"},
+            {"n": 3, "note": "The filter reads the file's first bytes for a real image signature. Does a valid header say anything about what comes after it?", "entry": "/uploads?level=3"},
         ],
     },
     {
         "slug": "param",
         "num": 11,
         "name": "Parameter Enumeration",
-        "objective": "Find undocumented parameters that change the response.",
+        "objective": "Each level secretly honors one undocumented query parameter. Discover its name with a parameter wordlist (arjun / wfuzz / ffuf) — a recognized name returns a different response than an unknown one — then find the value that unlocks the flag.",
         "levels": [
-            {"n": 1, "note": "verbose=1 diagnostics.", "entry": "/debug?level=1"},
-            {"n": 2, "note": "A hidden token parameter.", "entry": "/debug?level=2"},
-            {"n": 3, "note": "A hidden privilege parameter.", "entry": "/debug?level=3"},
+            {"n": 1, "note": "A hidden diagnostics parameter. Fuzz parameter names and watch the response length change.", "entry": "/debug?level=1"},
+            {"n": 2, "note": "A different undocumented parameter — same enumeration method.", "entry": "/debug?level=2"},
+            {"n": 3, "note": "A hidden privilege parameter. Find the name, then guess the value that flips it on.", "entry": "/debug?level=3"},
         ],
     },
     {
@@ -777,11 +777,12 @@ async def dom(request: Request, level: str = "1"):
 
 @app.get("/robots.txt", response_class=PlainTextResponse)
 async def robots():
+    # Only the L1 target is leaked here. /admin-panel and /server-status are
+    # deliberately NOT listed — L3 must be found by status-code enumeration
+    # (403-exists vs 404-missing), not by reading robots.txt.
     return (
         "User-agent: *\n"
         "Disallow: /static/files/db.sql.bak\n"
-        "Disallow: /admin-panel\n"
-        "Disallow: /server-status\n"
     )
 
 
@@ -807,7 +808,12 @@ async def server_status():
 # 10. File Upload
 # ---------------------------------------------------------------------------
 
+# Extensions the browser renders as ACTIVE content (execute JS) when served.
 DANGEROUS_EXTS = {".html", ".htm", ".svg", ".xhtml", ".xml", ".js"}
+# Raster image extensions used by the L2 naive filename check.
+RASTER_EXTS = (".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp")
+# Real image file signatures (magic bytes) used by the L3 content check.
+IMAGE_MAGIC = (b"\xff\xd8\xff", b"\x89PNG\r\n\x1a\n", b"GIF87a", b"GIF89a", b"BM")
 
 
 @app.post("/upload")
@@ -816,25 +822,53 @@ async def upload(file: UploadFile = File(...), level: str = Form("1")):
     name = Path(file.filename or "upload.bin").name
     data = await file.read()
     suffix = Path(name).suffix
+    ctype = (file.content_type or "").lower()
 
-    if lvl == 2:
-        # Case-sensitive blacklist (bypass: .SVG / .HtmL).
-        if suffix in DANGEROUS_EXTS:
+    # "This endpoint accepts images only." Each level enforces that a different,
+    # intentionally-bypassable way. The goal stays the same: smuggle a file that
+    # executes in the browser (stored XSS) past the image filter.
+    if lvl == 1:
+        # Trusts the client-declared Content-Type (bypass: spoof it to image/*,
+        #   curl -F 'file=@x.html;type=image/png').
+        if not ctype.startswith("image/"):
             return PlainTextResponse(
-                "Blocked: file type not allowed", status_code=400
+                "Blocked: only image/* uploads are allowed", status_code=400
+            )
+    elif lvl == 2:
+        # Naive filename check: requires an image extension SOMEWHERE in the name
+        # (bypass: double extension, e.g. shell.png.html — ends in .html but
+        #   still contains '.png').
+        if not any(e in name.lower() for e in RASTER_EXTS):
+            return PlainTextResponse(
+                "Blocked: only image files (.jpg/.png/.gif...) allowed",
+                status_code=400,
             )
     elif lvl == 3:
-        # Content sniff of only the first 512 bytes (bypass: pad the front with a
-        # long comment so the <svg>/<script> markup falls past the sniff window).
-        head = data[:512].lower()
-        if b"<script" in head or b"<svg" in head or b"<html" in head:
-            return PlainTextResponse("Blocked: active content detected", status_code=400)
+        # Magic-byte sniff: the file must START with a real image signature
+        # (bypass: image/script polyglot — real 'GIF89a' header, then markup,
+        #   saved with an active extension like .html).
+        if not any(data[:16].startswith(m) for m in IMAGE_MAGIC):
+            return PlainTextResponse(
+                "Blocked: file content is not a real image", status_code=400
+            )
 
     destination = UPLOADS / f"{secrets.token_hex(4)}_{name}"
     destination.write_bytes(data)
 
-    servable = destination.suffix.lower() in DANGEROUS_EXTS or b"<script" in data[:2048].lower()
-    # Per-level flag: awarded only if this level's specific check was bypassed.
+    # The flag is earned only by storing content that would actually EXECUTE in a
+    # victim's browser — i.e. a browser-rendered type (dangerous extension, so it
+    # is served with an active content-type) AND real active markup somewhere in
+    # the file. An empty/benign file with a dangerous extension does not count.
+    low = data.lower()
+    has_active = (
+        b"<script" in low
+        or b"<svg" in low
+        or b"javascript:" in low
+        or re.search(rb"on\w+\s*=", low) is not None
+    )
+    servable = destination.suffix.lower() in DANGEROUS_EXTS and has_active
+    # Per-level flag: awarded only if this level's specific check was bypassed
+    # AND the stored file carries executable content.
     flag = flag_str("upload", lvl) if servable else ""
     return RedirectResponse(
         url=f"/uploads?name={urllib.parse.quote(destination.name)}&level={lvl}"
@@ -857,44 +891,33 @@ async def uploads(request: Request, name: str = "", level: str = "1", flag: str 
 # 11. Parameter Enumeration
 # ---------------------------------------------------------------------------
 
+# Each level secretly honors one undocumented query parameter. The NAME is
+# discoverable with a parameter wordlist (arjun / wfuzz / ffuf) because supplying
+# a recognized name yields a DIFFERENT response length than an unknown one — the
+# whole point of parameter enumeration. The exact value then unlocks the flag.
+HIDDEN_PARAMS = {
+    1: ("verbose", "1"),     # verbose debug output
+    2: ("debug", "1"),       # undocumented debug switch
+    3: ("admin", "true"),    # hidden privilege flag
+}
+
+
 @app.get("/debug")
-async def debug(
-    request: Request,
-    level: str = "1",
-    verbose: str = "",
-    format: str = "",
-    preview: str = "",
-    debug_token: str = "",
-    admin: str = "",
-):
+async def debug(request: Request, level: str = "1"):
     lvl = clamp_level(level)
+    params = dict(request.query_params)
+    secret_param, unlock_value = HIDDEN_PARAMS[lvl]
 
-    if lvl == 1:
-        # Undocumented verbose flag reveals the flag.
-        if verbose == "1":
+    if secret_param in params:
+        if params[secret_param] == unlock_value:
             return JSONResponse(
-                {
-                    "debug": True,
-                    "build": "0xweb-dev",
-                    "flag": flag_str("param", 1),
-                    "note": "There are more parameters you may not see in the UI.",
-                }
+                {secret_param: "accepted", "flag": flag_str("param", lvl)}
             )
-        if format == "json":
-            return JSONResponse({"status": "ok", "mode": "json"})
-        if preview == "1":
-            return JSONResponse({"preview": True, "message": "Preview mode is enabled."})
-        return JSONResponse({"status": "ok"})
-
-    if lvl == 2:
-        # Hidden token parameter (find it with a parameter wordlist).
-        if debug_token == "0xweb":
-            return JSONResponse({"debug_token": "accepted", "flag": flag_str("param", 2)})
-        return JSONResponse({"status": "ok"})
-
-    # lvl 3: hidden privilege parameter.
-    if admin == "true":
-        return JSONResponse({"admin": True, "flag": flag_str("param", 3)})
+        # Recognized parameter but wrong value: a distinct response so a fuzzer
+        # can DETECT the parameter name (differential), then work out the value.
+        return JSONResponse(
+            {"status": "ok", secret_param: "recognized — value rejected"}
+        )
     return JSONResponse({"status": "ok"})
 
 

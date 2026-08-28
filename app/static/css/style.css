@@ -36,6 +36,8 @@ footer{text-align:center;border-top:1px solid #222;padding:25px;color:#666;font-
 .level-badge{flex:0 0 auto;font-weight:700;color:#e11;min-width:64px}
 .level-body{flex:1}
 .level-note{margin:0 0 .6rem;opacity:.8}
+.level-target{margin:0 0 .6rem;font-size:.88rem}
+.level-target code{background:#1a1a1a;padding:.15rem .4rem;border-radius:4px;color:#fc6}
 .btn{display:inline-block;background:#e11;color:#fff;padding:.4rem .9rem;border-radius:5px;text-decoration:none;font-size:.9rem}
 .btn:hover{background:#f33}
 .entry{display:block;margin-top:.5rem;font-size:.8rem;opacity:.6}
